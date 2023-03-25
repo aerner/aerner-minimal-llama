@@ -163,14 +163,9 @@ def main():
             opt.zero_grad()
 
         if actual_step % args.save_interval == 0:
-            save_tunable_parameters(model, os.path.join(args.save_dir, f"params-{actual_step:06d}.p"))
-            save_tunable_parameters(opt.state_dict(), os.path.join(args.save_dir, f"opt-{actual_step:06d}.p"))
             write_json({"latest_step": step}, latest_path)
-
             model.save_pretrained(args.finetune_model_id)
             torch.save(model.state_dict(), "{}.pt".format(args.finetune_model_id))
-
-    save_tunable_parameters(model, os.path.join(args.save_dir, "params-last.p"))
 
 
 if __name__ == "__main__":
