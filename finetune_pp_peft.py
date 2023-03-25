@@ -11,6 +11,7 @@ import transformers
 from finetune_pp import RepeatingLoader, DatasetDataset
 from finetune_peft import get_peft_config, CastOutputToFloat
 import peft
+from peft import LoraConfig, TaskType
 
 
 def write_json(x, path):
@@ -56,11 +57,11 @@ def main():
 
     args = parser.parse_args()
 
-
-
-    os.makedirs(args.save_dir, exist_ok=True)
-    latest_path = os.path.join(args.save_dir, "latest.json")
-
+    #
+    #
+    # Dataset
+    #
+    #
     print("Setup Data")
     dataset = datasets.load_from_disk(args.dataset_path)
     dataset = dataset.remove_columns(["instruction", "input", "output"])
@@ -70,10 +71,16 @@ def main():
         # shuffle=True
     ))
 
+    #
+    #
+    # Model
+    #
+    #
     print("Setup Model")
     # The auto/balance balancing strategy doesn't seem to work correctly,
     # so we manually compute the mappings.
-    num_layers = read_json(os.path.join(args.model_path, "config.json"))["num_hidden_layers"]
+    num_layers = read_json(os.path.join(args.model_path, "config.json"))[
+        "num_hidden_layers"]
     device_ids = list(range(torch.cuda.device_count()))
     device_map = {
         "model.embed_tokens": device_ids[0],
@@ -82,7 +89,8 @@ def main():
     }
     allocations = [
         device_ids[i] for i in
-        sorted(list(range(len(device_ids))) * math.ceil(num_layers / len(device_ids)))
+        sorted(list(range(len(device_ids))) *
+               math.ceil(num_layers / len(device_ids)))
     ]
     for layer_i, device_id in enumerate(allocations):
         device_map[f"model.layers.{layer_i}.self_attn.q_proj.weight"] = device_id
@@ -105,13 +113,31 @@ def main():
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
     # model.lm_head = CastOutputToFloat(model.lm_head)
-    model.lm_head.to(torch.float32)
-    model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
+    model.lm_head.to(torch.float16)
+    # silence the warnings. Please re-enable for inference!
+    model.config.use_cache = False
 
+    #
+    #
+    # Peft configuration
+    #
+    #
     print("Setup PEFT")
-    peft_config = get_peft_config(peft_args=args)
-    model = peft.get_peft_model(model, peft_config)
+    model = peft.get_peft_model(model, LoraConfig(
+        r=8,
+        lora_alpha=32,
+        target_modules=["q_proj", "v_proj"],
+        lora_dropout=0.1,
+        bias="none",
+        task_type=TaskType.CAUSAL_LM,
+        inference_mode=False,
+    ))
 
+    #
+    #
+    # Optimizer ready
+    #
+    #
     print("Setup optimizer")
     opt = torch.optim.AdamW([
         p
@@ -135,7 +161,6 @@ def main():
     # torch.save(model.state_dict(), "{}.pt".format(args.finetune_model_id))
     # print("Save initial model complete")
 
-
     # Train (maybe can replace with Trainer? I think Trainer might mess up the device mappings though.)
     print("Start training")
     generator = iter(dataloader)
@@ -158,9 +183,9 @@ def main():
             opt.zero_grad()
 
         if actual_step % args.save_interval == 0:
-            write_json({"latest_step": step}, latest_path)
             model.save_pretrained(args.finetune_model_id)
-            torch.save(model.state_dict(), "{}.pt".format(args.finetune_model_id))
+            torch.save(model.state_dict(), "{}.pt".format(
+                args.finetune_model_id))
 
 
 if __name__ == "__main__":
