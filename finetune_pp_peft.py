@@ -6,12 +6,11 @@ import tqdm.auto as tqdm
 
 import torch
 
+import torch
 import datasets
 import transformers
 from finetune_pp import RepeatingLoader, DatasetDataset
-from finetune_peft import get_peft_config, CastOutputToFloat
 import peft
-from peft import LoraConfig, TaskType
 
 
 def write_json(x, path):
@@ -35,6 +34,9 @@ def model_forward(model, inputs):
     h = model.base_model.model.model.norm(h)
     h = model.base_model.model.lm_head(h)
     return h
+
+class CastOutputToFloat(torch.nn.Sequential):
+    def forward(self, x): return super().forward(x).to(torch.float32)
 
 
 def main():
@@ -123,15 +125,17 @@ def main():
     #
     #
     print("Setup PEFT")
-    model = peft.get_peft_model(model, LoraConfig(
+    model = peft.get_peft_model(model, peft.LoraConfig(
         r=8,
         lora_alpha=32,
         target_modules=["q_proj", "v_proj"],
         lora_dropout=0.1,
         bias="none",
-        task_type=TaskType.CAUSAL_LM,
+        task_type=peft.TaskType.CAUSAL_LM,
         inference_mode=False,
     ))
+
+    print(model)
 
     #
     #
