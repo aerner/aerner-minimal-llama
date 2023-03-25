@@ -47,6 +47,8 @@ def model_forward(model, inputs):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--finetune_model_id", type=str)
+
     parser.add_argument("--model_path", type=str)
     parser.add_argument("--dataset_path", type=str)
     parser.add_argument("--save_dir", type=str)
@@ -103,6 +105,7 @@ def main():
     model = transformers.LlamaForCausalLM.from_pretrained(
         args.model_path,
         load_in_8bit=True,
+        torch_dtype=torch.float16,
         device_map=device_map,
     )
     model.gradient_checkpointing_enable()
@@ -131,6 +134,13 @@ def main():
     else:
         start = 0
 
+    # Save initial model
+    print("Save initial model")
+    model.save_pretrained(args.finetune_model_id)
+    torch.save(model.state_dict(), "{}.pt".format(args.finetune_model_id))
+    print("Save initial model complete")
+
+
     # Train (maybe can replace with Trainer? I think Trainer might mess up the device mappings though.)
     print("Start training")
     generator = iter(dataloader)
@@ -156,6 +166,9 @@ def main():
             save_tunable_parameters(model, os.path.join(args.save_dir, f"params-{actual_step:06d}.p"))
             save_tunable_parameters(opt.state_dict(), os.path.join(args.save_dir, f"opt-{actual_step:06d}.p"))
             write_json({"latest_step": step}, latest_path)
+
+            model.save_pretrained(args.finetune_model_id)
+            torch.save(model.state_dict(), "{}.pt".format(args.finetune_model_id))
 
     save_tunable_parameters(model, os.path.join(args.save_dir, "params-last.p"))
 
