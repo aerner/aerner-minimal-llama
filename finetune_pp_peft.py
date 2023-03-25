@@ -67,10 +67,11 @@ def main():
 
     print("Setup Data")
     dataset = datasets.load_from_disk(args.dataset_path)
+    dataset = dataset.remove_columns(["instruction", "input", "output"])
     dataloader = RepeatingLoader(torch.utils.data.DataLoader(
         DatasetDataset(dataset),
         batch_size=args.batch_size,
-        shuffle=True
+        # shuffle=True
     ))
 
     print("Setup Model")
