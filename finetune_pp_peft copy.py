@@ -9,8 +9,15 @@ import torch
 import datasets
 import transformers
 from finetune_pp import RepeatingLoader, DatasetDataset
-from finetune_peft import get_peft_config, CastOutputToFloat
-import peft
+from finetune_peft import get_peft_config, CastOutputToFloat, save_tunable_parameters
+from peft import (
+    get_peft_model,
+    LoraConfig,
+    PrefixTuningConfig,
+    PromptEncoderConfig,
+    PromptTuningConfig,
+    TaskType,
+)
 
 
 def write_json(x, path):
@@ -55,9 +62,6 @@ def main():
     parser.add_argument("--mapping_hidden_dim", type=int, default=1024)
 
     args = parser.parse_args()
-
-
-
     os.makedirs(args.save_dir, exist_ok=True)
     latest_path = os.path.join(args.save_dir, "latest.json")
 
@@ -104,13 +108,12 @@ def main():
     )
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
-    # model.lm_head = CastOutputToFloat(model.lm_head)
-    model.lm_head.to(torch.float32)
+    model.lm_head = CastOutputToFloat(model.lm_head)
     model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
 
     print("Setup PEFT")
     peft_config = get_peft_config(peft_args=args)
-    model = peft.get_peft_model(model, peft_config)
+    model = get_peft_model(model, peft_config)
 
     print("Setup optimizer")
     opt = torch.optim.AdamW([
