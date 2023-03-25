@@ -119,27 +119,27 @@ def main():
         if p.requires_grad
     ], lr=args.learning_rate)
 
-    # Restart progress
-    if os.path.exists(latest_path):
-        start = read_json(latest_path)["latest_step"]
-        model.load_state_dict(
-            torch.load(os.path.join(os.path.join(args.save_dir, f"model-{start + 1:06d}.p"))), strict=False)
-        opt.load_state_dict(
-            torch.load(os.path.join(os.path.join(args.save_dir, f"opt-{start + 1:06d}.p"))))
-    else:
-        start = 0
+    # # Restart progress
+    # if os.path.exists(latest_path):
+    #     start = read_json(latest_path)["latest_step"]
+    #     model.load_state_dict(
+    #         torch.load(os.path.join(os.path.join(args.save_dir, f"model-{start + 1:06d}.p"))), strict=False)
+    #     opt.load_state_dict(
+    #         torch.load(os.path.join(os.path.join(args.save_dir, f"opt-{start + 1:06d}.p"))))
+    # else:
+    #     start = 0
 
-    # Save initial model
-    print("Save initial model")
-    model.save_pretrained(args.finetune_model_id)
-    torch.save(model.state_dict(), "{}.pt".format(args.finetune_model_id))
-    print("Save initial model complete")
+    # # Save initial model
+    # print("Save initial model")
+    # model.save_pretrained(args.finetune_model_id)
+    # torch.save(model.state_dict(), "{}.pt".format(args.finetune_model_id))
+    # print("Save initial model complete")
 
 
     # Train (maybe can replace with Trainer? I think Trainer might mess up the device mappings though.)
     print("Start training")
     generator = iter(dataloader)
-    for step in tqdm.trange(args.num_train_steps, initial=start):
+    for step in tqdm.trange(args.num_train_steps, initial=0):
         input_ids, labels = next(generator)
         logits = model_forward(model, input_ids)
         loss = torch.nn.functional.cross_entropy(
