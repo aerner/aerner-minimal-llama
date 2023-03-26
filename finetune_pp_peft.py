@@ -173,7 +173,7 @@ def main():
     allocations = [
         device_ids[i] for i in
         sorted(list(range(len(device_ids))) *
-               math.ceil(config.num_layers / len(device_ids)))
+               math.ceil(config.num_hidden_layers / len(device_ids)))
     ]
     for layer_i, device_id in enumerate(allocations):
         device_map[f"model.layers.{layer_i}"] = device_id
