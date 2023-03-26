@@ -120,6 +120,21 @@ def save_cpp_model(lora_model, prefix):
         json.dump(params, f)
 
 
+def save_all(model, prefix, step=0):
+    print("Save initial model")
+
+    os.makedirs("{}/model/".format(prefix), exist_ok=True)
+    os.makedirs("{}/ckpt/".format(prefix), exist_ok=True)
+    os.makedirs("{}/cpp/".format(prefix), exist_ok=True)
+
+    model.save_pretrained("{}/ckpt/ckpt-{}".format(prefix, step))
+    torch.save(model.state_dict(),
+               "{}/model/model-{}.pt".format(prefix, step))
+    save_cpp_model(model, "{}/cpp/cpp-{}".format(prefix, step))
+
+    print("Save initial model complete")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--finetune_model_id", type=str)
@@ -230,15 +245,7 @@ def main():
     #     start = 0
 
     # Save initial model
-    print("Save initial model")
-    step = 0
-    model.save_pretrained(
-        "{}/ckpt/ckpt-{}".format(args.finetune_model_id, step))
-    os.makedirs("{}/model/".format(args.finetune_model_id), exist_ok=True)
-    torch.save(model.state_dict(),
-               "{}/model/model-{}.pt".format(args.finetune_model_id, step))
-    save_cpp_model(model, "{}/cpp/cpp-{}".format(args.finetune_model_id, step))
-    print("Save initial model complete")
+    save_all(model, args.finetune_model_id)
 
     # Train (maybe can replace with Trainer? I think Trainer might mess up the device mappings though.)
     print("Start training")
@@ -262,13 +269,7 @@ def main():
             opt.zero_grad()
 
         if actual_step % args.save_interval == 0:
-            print("Save model")
-            model.save_pretrained(
-                "{}/ckpt/ckpt-{}".format(args.finetune_model_id, step))
-            torch.save(model.state_dict(),
-                       "{}/model/model-{}.pt".format(args.finetune_model_id, step))
-            save_cpp_model(
-                model, "{}/cpp/cpp-{}".format(args.finetune_model_id, step))
+            save_all(model, args.finetune_model_id, step=step)
 
 
 if __name__ == "__main__":
