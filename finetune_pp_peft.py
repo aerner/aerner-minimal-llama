@@ -121,7 +121,7 @@ def save_cpp_model(lora_model, prefix):
 
 
 def save_all(model, prefix, step=0):
-    print("Save initial model")
+    print("Save model")
 
     os.makedirs("{}/model/".format(prefix), exist_ok=True)
     os.makedirs("{}/ckpt/".format(prefix), exist_ok=True)
@@ -130,14 +130,15 @@ def save_all(model, prefix, step=0):
     model.save_pretrained("{}/ckpt/ckpt-{}".format(prefix, step))
     torch.save(model.state_dict(),
                "{}/model/model-{}.pt".format(prefix, step))
-    save_cpp_model(model, "{}/cpp/cpp-{}".format(prefix, step))
+    # save_cpp_model(model, "{}/cpp/cpp-{}".format(prefix, step))
 
-    print("Save initial model complete")
+    print("Save model complete")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--finetune_model_id", type=str)
+    parser.add_argument("--cpp_model", type=str)
 
     parser.add_argument("--model_path", type=str)
     parser.add_argument("--dataset_path", type=str)
@@ -245,6 +246,7 @@ def main():
     #     start = 0
 
     # Save initial model
+    save_cpp_model(model, args.cpp_model)
     save_all(model, args.finetune_model_id)
 
     # Train (maybe can replace with Trainer? I think Trainer might mess up the device mappings though.)
@@ -269,7 +271,7 @@ def main():
             opt.zero_grad()
 
         if actual_step % args.save_interval == 0:
-            save_all(model, args.finetune_model_id, step=step)
+            save_all(model, args.finetune_model_id, step=actual_step)
 
 
 if __name__ == "__main__":
