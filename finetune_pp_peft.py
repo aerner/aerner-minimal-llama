@@ -177,16 +177,6 @@ def main():
     ]
     for layer_i, device_id in enumerate(allocations):
         device_map[f"model.layers.{layer_i}"] = device_id
-        # device_map[f"model.layers.{layer_i}.self_attn.q_proj.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.self_attn.k_proj.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.self_attn.v_proj.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.self_attn.o_proj.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.mlp.gate_proj.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.mlp.down_proj.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.mlp.up_proj.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.input_layernorm.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.post_attention_layernorm.weight"] = device_id
-        # device_map[f"model.layers.{layer_i}.self_attn.rotary_emb.inv_freq"] = device_id
 
     model = LlamaForCausalLM.from_pretrained(
         args.model_path,
@@ -216,7 +206,8 @@ def main():
         inference_mode=False,
     ))
 
-    print(model)
+    for name, param in model.named_parameters():
+        print(f"{name}: {param.dtype} {type(param)} {param.device}")
 
     #
     #
@@ -245,7 +236,8 @@ def main():
     step = 0
     model.save_pretrained(
         "{}/ckpt/ckpt-{}".format(args.finetune_model_id, step))
-    torch.save("{}/model/model-{}.pt".format(args.finetune_model_id, step))
+    torch.save(model.state_dict(),
+               "{}/model/model-{}.pt".format(args.finetune_model_id, step))
     save_cpp_model(model, "{}/cpp/cpp-{}".format(args.finetune_model_id, step))
     print("Save initial model complete")
 
@@ -274,8 +266,8 @@ def main():
             print("Save model")
             model.save_pretrained(
                 "{}/ckpt/ckpt-{}".format(args.finetune_model_id, step))
-            torch.save(
-                "{}/model/model-{}.pt".format(args.finetune_model_id, step))
+            torch.save(model.state_dict(),
+                       "{}/model/model-{}.pt".format(args.finetune_model_id, step))
             save_cpp_model(
                 model, "{}/cpp/cpp-{}".format(args.finetune_model_id, step))
 
