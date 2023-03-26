@@ -115,9 +115,7 @@ def save_cpp_model(lora_model, prefix):
                 new_state_dict[new_k] = v
 
     os.makedirs(prefix, exist_ok=True)
-
     torch.save(new_state_dict, "{}/consolidated.00.pth".format(prefix))
-
     with open("{}/params.json".format(prefix), "w") as f:
         json.dump(params, f)
 
@@ -236,6 +234,7 @@ def main():
     step = 0
     model.save_pretrained(
         "{}/ckpt/ckpt-{}".format(args.finetune_model_id, step))
+    os.makedirs("{}/model/".format(args.finetune_model_id), exist_ok=True)
     torch.save(model.state_dict(),
                "{}/model/model-{}.pt".format(args.finetune_model_id, step))
     save_cpp_model(model, "{}/cpp/cpp-{}".format(args.finetune_model_id, step))
