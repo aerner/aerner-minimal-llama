@@ -1,12 +1,25 @@
 version: 1
-summary: This repo contains a random assortment of code for running and fine-tuning
-  LLaMA. Many parts are still work in progress. There ought to be more efficient methods
-  of tuning (DeepSpeed / ZeRO, NeoX) than the ones presented here, but folks may find
-  this useful already.
+summary: Python code for tokenizing datasets and running or fine-tuning LLaMA models, including PEFT, pipeline parallelism, and DeepSpeed examples. The README describes parts of the project as work in progress.
 aliases:
 - minimal-llama
-status: unknown
+- LLaMA fine-tuning
+status: active
 work:
 - investigate
+- edit
+- test
+requirements:
+  purpose: development
 references:
 - README.md
+- tokenize_dataset.py
+- finetune_peft.py
+- finetune_pp.py
+- finetune_ds_pipeline.py
+- minimal_llama/model.py
+provenance:
+  source_commit: 3fb7fa9de505772b6072ab3aa7563bc011f527a9
+  generator: metadata-agent-v1
+  policy_version: 2026-10-09.1
+  knowledge_ids:
+  - 5beafd45-1064-43b6-8577-87c37fffa681
