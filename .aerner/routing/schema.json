@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/aerner/aerner-changjiang/blob/main/policy/project-metadata.schema.json",
+  "title": "Aerner folder routing metadata v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "summary"],
+  "properties": {
+    "version": {"const": 1},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 600},
+    "aliases": {"type": "array", "maxItems": 20, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 100}},
+    "status": {"enum": ["active", "archive", "unknown"]},
+    "work": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["investigate", "edit", "test", "build"]}},
+    "requirements": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "os": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["linux", "windows", "macos"]}},
+        "network": {"type": "array", "uniqueItems": true, "items": {"enum": ["internet", "roppongi-lan"]}},
+        "purpose": {"enum": ["development", "network-management", "node-management", "platform-management", "production-hosting"]},
+        "capabilities": {"type": "array", "uniqueItems": true, "maxItems": 20, "items": {"enum": ["apple.xcode", "apple.ios-build", "windows.powerpoint-com", "linux.kvm"]}}
+      }
+    },
+    "references": {"type": "array", "maxItems": 20, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 240}}
+  }
+}
